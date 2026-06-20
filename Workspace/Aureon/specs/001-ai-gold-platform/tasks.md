@@ -1,3 +1,5 @@
+Aureon empowers investors with real-time gold market intelligence. By combining live pricing data, advanced charting, financial news, and AI-driven analysis, the platform helps users understand market trends, identify opportunities, and make more informed investment decisions through natural language conversations and data-driven insights.
+
 # Tasks: AI-Powered Gold Market Intelligence Platform
 
 **Input**: Design documents from `specs/001-ai-gold-platform/`

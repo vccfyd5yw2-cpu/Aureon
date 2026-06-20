@@ -1,0 +1,96 @@
+openapi: "3.1.0"
+info:
+  title: Aureon – Prices API
+  version: "1.0.0"
+  description: Live and historical gold price data endpoints.
+
+servers:
+  - url: /api/v1
+
+paths:
+  /prices/live:
+    get:
+      summary: Get latest live gold price
+      operationId: getLivePrice
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          description: Instrument symbol (default XAU/USD)
+          schema:
+            type: string
+            example: "XAU/USD"
+      responses:
+        "200":
+          description: Current gold price snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoldPriceResponse"
+        "503":
+          description: Price feed currently unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /prices/live/stream:
+    get:
+      summary: Server-Sent Events stream of live price updates
+      operationId: streamLivePrices
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+            example: "XAU/USD"
+      responses:
+        "200":
+          description: SSE stream; each event is a GoldPriceResponse JSON payload
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+components:
+  schemas:
+    GoldPriceResponse:
+      type: object
+      required: [symbol, price, currency, source, recordedAt, changeAmount, changePercent]
+      properties:
+        symbol:
+          type: string
+          example: "XAU/USD"
+        price:
+          type: number
+          format: double
+          example: 2345.67
+        currency:
+          type: string
+          example: "USD"
+        source:
+          type: string
+          example: "goldapi.io"
+        recordedAt:
+          type: string
+          format: date-time
+        changeAmount:
+          type: number
+          format: double
+          description: Change from previous 24 h close
+        changePercent:
+          type: number
+          format: double
+          description: Percentage change from previous 24 h close
+        stale:
+          type: boolean
+          description: True when feed is unavailable and value is last-known cached price
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string

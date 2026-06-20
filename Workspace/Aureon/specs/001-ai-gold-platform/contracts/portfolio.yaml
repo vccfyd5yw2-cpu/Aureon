@@ -1,0 +1,213 @@
+openapi: "3.1.0"
+info:
+  title: Aureon – Portfolio API
+  version: "1.0.0"
+  description: Authenticated user gold portfolio management.
+
+servers:
+  - url: /api/v1
+
+security:
+  - BearerAuth: []
+
+paths:
+  /portfolio/holdings:
+    get:
+      summary: List all holdings for the current user
+      operationId: getHoldings
+      responses:
+        "200":
+          description: Holdings with current market values
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      summary: Add a new holding
+      operationId: addHolding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddHoldingRequest"
+      responses:
+        "201":
+          description: Holding created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HoldingResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /portfolio/holdings/{id}:
+    put:
+      summary: Update an existing holding
+      operationId: updateHolding
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddHoldingRequest"
+      responses:
+        "200":
+          description: Updated holding
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HoldingResponse"
+        "404":
+          description: Holding not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    delete:
+      summary: Delete a holding
+      operationId: deleteHolding
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Holding not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    AddHoldingRequest:
+      type: object
+      required: [symbol, quantity, purchasePrice, purchaseCurrency, purchaseDate]
+      properties:
+        symbol:
+          type: string
+          example: "XAU/USD"
+        quantity:
+          type: number
+          format: double
+          minimum: 0.000001
+          example: 1.5
+        purchasePrice:
+          type: number
+          format: double
+          minimum: 0.000001
+          example: 2200.00
+        purchaseCurrency:
+          type: string
+          example: "USD"
+        purchaseDate:
+          type: string
+          format: date
+          example: "2025-01-15"
+        notes:
+          type: string
+          nullable: true
+    HoldingResponse:
+      type: object
+      required: [id, symbol, quantity, purchasePrice, purchaseCurrency, purchaseDate, currentPrice, currentValue, gainLossAmount, gainLossPercent]
+      properties:
+        id:
+          type: string
+          format: uuid
+        symbol:
+          type: string
+        quantity:
+          type: number
+          format: double
+        purchasePrice:
+          type: number
+          format: double
+        purchaseCurrency:
+          type: string
+        purchaseDate:
+          type: string
+          format: date
+        notes:
+          type: string
+          nullable: true
+        currentPrice:
+          type: number
+          format: double
+        currentValue:
+          type: number
+          format: double
+        gainLossAmount:
+          type: number
+          format: double
+        gainLossPercent:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+    PortfolioResponse:
+      type: object
+      required: [holdings, totalCurrentValue, totalGainLossAmount, totalGainLossPercent]
+      properties:
+        holdings:
+          type: array
+          items:
+            $ref: "#/components/schemas/HoldingResponse"
+        totalCurrentValue:
+          type: number
+          format: double
+        totalGainLossAmount:
+          type: number
+          format: double
+        totalGainLossPercent:
+          type: number
+          format: double
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string

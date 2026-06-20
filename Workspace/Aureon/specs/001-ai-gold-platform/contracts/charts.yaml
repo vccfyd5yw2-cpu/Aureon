@@ -1,0 +1,216 @@
+openapi: "3.1.0"
+info:
+  title: Aureon – Charts API
+  version: "1.0.0"
+  description: Historical OHLCV data and technical indicator series.
+
+servers:
+  - url: /api/v1
+
+paths:
+  /charts/history:
+    get:
+      summary: Historical OHLCV candlestick data
+      operationId: getPriceHistory
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "XAU/USD"
+        - name: range
+          in: query
+          required: true
+          description: Time range
+          schema:
+            type: string
+            enum: [1D, 1W, 1M, 3M, 1Y, 5Y]
+      responses:
+        "200":
+          description: OHLCV data series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OhlcvResponse"
+        "400":
+          description: Invalid range value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /charts/indicators:
+    get:
+      summary: Compute and return technical indicator series
+      operationId: getIndicators
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "XAU/USD"
+        - name: range
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [1D, 1W, 1M, 3M, 1Y, 5Y]
+        - name: indicators
+          in: query
+          required: true
+          description: Comma-separated list of indicator types
+          schema:
+            type: string
+            example: "SMA,EMA,RSI,MACD,BB"
+        - name: smaPeriod
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: emaPeriod
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: rsiPeriod
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 14
+        - name: bbPeriod
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: bbStddev
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 2.0
+      responses:
+        "200":
+          description: Map of indicator type to data series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndicatorsResponse"
+
+components:
+  schemas:
+    OhlcvCandle:
+      type: object
+      required: [timestamp, open, high, low, close, volume]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        open:
+          type: number
+          format: double
+        high:
+          type: number
+          format: double
+        low:
+          type: number
+          format: double
+        close:
+          type: number
+          format: double
+        volume:
+          type: number
+          format: double
+    OhlcvResponse:
+      type: object
+      required: [symbol, range, candles, dataComplete]
+      properties:
+        symbol:
+          type: string
+        range:
+          type: string
+        candles:
+          type: array
+          items:
+            $ref: "#/components/schemas/OhlcvCandle"
+        dataComplete:
+          type: boolean
+          description: False when stored data covers less than the requested range (e.g. platform has only 3 months of history but 5Y was requested)
+    DataPoint:
+      type: object
+      required: [timestamp, value]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        value:
+          type: number
+          format: double
+    MacdDataPoint:
+      type: object
+      required: [timestamp, macd, signal, histogram]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        macd:
+          type: number
+          format: double
+        signal:
+          type: number
+          format: double
+        histogram:
+          type: number
+          format: double
+    BollingerDataPoint:
+      type: object
+      required: [timestamp, upper, middle, lower]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        upper:
+          type: number
+          format: double
+        middle:
+          type: number
+          format: double
+        lower:
+          type: number
+          format: double
+    IndicatorsResponse:
+      type: object
+      properties:
+        SMA:
+          type: array
+          items:
+            $ref: "#/components/schemas/DataPoint"
+        EMA:
+          type: array
+          items:
+            $ref: "#/components/schemas/DataPoint"
+        RSI:
+          type: array
+          items:
+            $ref: "#/components/schemas/DataPoint"
+        MACD:
+          type: array
+          items:
+            $ref: "#/components/schemas/MacdDataPoint"
+        BB:
+          type: array
+          items:
+            $ref: "#/components/schemas/BollingerDataPoint"
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
